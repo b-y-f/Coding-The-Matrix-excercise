@@ -1,8 +1,8 @@
 # Copyright 2013 Philip N. Klein
+# additions 2015 Iain Coghill
 """
 This file contains a simple plotting interface, which uses a browser with SVG to
 present a plot of points represented as either complex numbers or 2-vectors.
-
 """
 
 import webbrowser
@@ -17,11 +17,20 @@ _browser = None
 def plot(L, scale=4, dot_size = 3, browser=None):
     """ plot takes a list of points, optionally a scale (relative to a 200x200 frame),
         optionally a dot size (diameter) in pixels, and optionally a browser name.
-        It produces an html file with SVG representing the given plot,
-        and opens the file in a web browser. It returns nothing.
+        If running within an ipython notebook and no explicit browser given, then
+        it returns an SVG plot directly to the notebook. Otherwise it produces an
+        html file with the SVG plot, opens the file in a web browser, and returns nothing.
     """
-    scalar = 200./scale
-    origin = (210, 210)
+
+    svg = plot2svg(L, scale, dot_size)
+
+
+    return svg2ipynb(svg)
+
+def svg2html(svg, browser):
+    """ svg2html takes an svg document, wraps it in a temporary html
+        file, and opens the file in a web browser.
+    """
     hpath = create_temp('.html')
     with open(hpath, 'w') as h:
         h.writelines(
@@ -30,25 +39,51 @@ def plot(L, scale=4, dot_size = 3, browser=None):
             ,'<title>plot</title>\n'
             ,'</head>\n'
             ,'<body>\n'
-            ,'<svg height="420" width=420 xmlns="http://www.w3.org/2000/svg">\n'
-            ,'<line x1="0" y1="210" x2="420" y2="210"'
-            ,'style="stroke:rgb(0,0,0);stroke-width:2"/>\n'
-            ,'<line x1="210" y1="0" x2="210" y2="420"'
-            ,'style="stroke:rgb(0,0,0);stroke-width:2"/>\n'])
-        for pt in L:
-            if isinstance(pt, Number):
-                x,y = pt.real, pt.imag
-            else:
-                if isinstance(pt, tuple) or isinstance(pt, list):
-                    x,y = pt
-                else:
-                    raise ValueError
-            h.writelines(['<circle cx="%d" cy="%d" r="%d" fill="red"/>\n'
-                          % (origin[0]+scalar*x,origin[1]-scalar*y,dot_size)])
-        h.writelines(['</svg>\n</body>\n</html>'])
-    if browser is None:
-        browser = _browser
+            ,svg
+            ,'\n</body>\n'
+            ,'</html>'])
     webbrowser.get(browser).open('file://%s' % hpath)
+
+def svg2ipynb(svg):
+    """ svg2ipynb takes an svg document and displays it directly into
+        the current ipython notebook.
+    """
+    from IPython.display import SVG
+    return SVG(svg)
+
+def plot2svg(L, scale, dot_size):
+    """ plot2svg takes a list of points, a scale (relative to a 200x200 frame),
+        and a dot size (diameter) in pixels.
+        It produces an SVG document representing the given plot as a string.
+    """
+    import xml.etree.ElementTree as ET
+
+    scalar = 200./scale
+    origin = (210, 210)
+    svg = ET.Element('svg', xmlns="http://www.w3.org/2000/svg", version="1.1",
+                    height="420", width="420")
+    # axis
+    ET.SubElement(svg,"line",
+                  x1="0", y1="210", x2="420", y2="210",
+                  style="stroke:rgb(0,0,0);stroke-width:2")
+    ET.SubElement(svg,"line",
+                  x1="210", y1="0", x2="210", y2="420",
+                  style="stroke:rgb(0,0,0);stroke-width:2")
+    for pt in L:
+        if isinstance(pt, Number):
+            x,y = pt.real, pt.imag
+        else:
+            if isinstance(pt, tuple) or isinstance(pt, list):
+                x,y = pt
+            else:
+                raise ValueError
+        ET.SubElement(svg, "circle",
+                        cx="%d" %(origin[0]+scalar*x),
+                        cy="%d" %(origin[1]-scalar*y),
+                        r="%d" %dot_size,
+                        fill="red")
+    return ET.tostring(svg, encoding="unicode")
+
 
 def setbrowser(browser=None):
     """ Registers the given browser and saves it as the module default.
@@ -56,19 +91,15 @@ def setbrowser(browser=None):
         The argument should be a value that can be passed to webbrowser.get()
         to obtain a browser.  If no argument is given, the default is reset
         to the system default.
-
         webbrowser provides some predefined browser names, including:
         'firefox'
         'opera'
-
         If the browser string contains '%s', it is interpreted as a literal
         browser command line.  The URL will be substituted for '%s' in the command.
         For example:
         'google-chrome %s'
         'cmd "start iexplore.exe %s"'
-
         See the webbrowser documentation for more detailed information.
-
         Note: Safari does not reliably work with the webbrowser module,
         so we recommend using a different browser.
     """

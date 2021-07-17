@@ -18,7 +18,11 @@ def vec_select(veclist, k):
     >>> vec_select([v1, v2, v3, v4], 'a') == [Vec(D,{'b': 1}), Vec(D,{'b': 2})]
     True
     '''
-    return [Vec(i.D, i.f['b']) for i in veclist if i.f['a']==0]
+    vs = [i for i in veclist if i[k]==0]
+    for i in vs:
+        i.f = {j:k for j,k in i.f.items() if k!=0}
+    return vs
+
 
 def vec_sum(veclist, D):
     '''
@@ -30,7 +34,11 @@ def vec_sum(veclist, D):
     >>> vec_sum([v1, v2, v3, v4], D) == Vec(D, {'b': 13, 'a': 11})
     True
     '''
-    pass
+    V = Vec(D,{})
+    for i in veclist:
+        V+=i
+    return V
+    
 
 def vec_select_sum(veclist, k, D):
     '''
@@ -42,8 +50,7 @@ def vec_select_sum(veclist, k, D):
     >>> vec_select_sum([v1, v2, v3, v4], 'a', D) == Vec(D, {'b': 3})
     True
     '''
-    pass
-
+    return vec_sum(vec_select(veclist, k), D)
 
 
 ## 2: (Problem 3.8.2) Vector Dictionary
@@ -57,28 +64,28 @@ def scale_vecs(vecdict):
     >>> [v in [Vec({1,2,4},{2: 3.0}), Vec({1,2,4},{1: 0.2, 2: 0.4, 4: 1.6})] for v in result]
     [True, True]
     '''
-    pass
+    return [ 1/i*j for i,j in vecdict.items()]
 
 
 
 ## 3: (Problem 3.8.3) Constructing a Span over GF(2)
-def GF2_span(D, L):
-    '''
-    >>> from GF2 import one
-    >>> D = {'a', 'b', 'c'}
-    >>> result = GF2_span(D, [Vec(D, {'a': one, 'c': one}), Vec(D, {'c': one})])
-    >>> len(result)
-    4
-    >>> [v in result for v in [Vec(D, {}),Vec(D, {'a': one, 'c': one}),Vec(D, {'c': one}),Vec(D, {'a':one})]
-    [True, True, True, True]
-    '''
-    pass
+# def GF2_span(D, L):
+#     '''
+#     >>> from GF2 import one
+#     >>> D = {'a', 'b', 'c'}
+#     >>> result = GF2_span(D, [Vec(D, {'a': one, 'c': one}), Vec(D, {'c': one})])
+#     >>> len(result)
+#     4
+#     >>> [v in result for v in [Vec(D, {}),Vec(D, {'a': one, 'c': one}),Vec(D, {'c': one}),Vec(D, {'a':one})]
+#     [True, True, True, True]
+#     '''
+#     return ...
 
 
 
 ## 4: (Problem 3.8.7) Is it a vector space 1
 # Answer with a boolean, please.
-is_a_vector_space_1 = ...
+is_a_vector_space_1 = False
 
 
 
